@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+<link href="/index.css" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1> Welcome to Chat App</h1>
+    <div class="row">
+        <div class="col-16 chat-container">
+            <div id="chat-left" class="col-4 chat-left"></div>
+            <div class="col-12 chat-right">
+                <div id="log" class="chat-top"></div>
+                <input id="input" type="text" placeholder="Type..." class="search" />
+                <button onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+    var socket = io.connect("http://localhost:8080");
+    //192.168.2.136
+
+    // Get and send the user name to server
+    const name = prompt("Enter your name");
+    socket.emit("saveUserName", name);
+
+    const node = document.getElementById("input");
+
+    // On send button click below code will send the msg to server
+    function sendMsg() {
+        socket.emit("userMsg", node.value);
+        node.value = "";
+    }
+
+    // Display User on left panel
+    function displayUser(id, data) {
+        var log = document.getElementById(id);
+        log.innerHTML = "";
+        data.map(function(msg){
+            var newElement = document.createElement("p");
+            newElement.innerHTML = msg;
+            log.appendChild(newElement);
+        });
+    }
+
+    // Display data on screen
+    function displayMsg(id, data) {
+        var log = document.getElementById(id);
+        var newElement = document.createElement("p");
+        newElement.innerHTML = data;
+        log.appendChild(newElement);
+        
+    }
+
+    // On enter key press below code will send the msg to server
+    node.addEventListener("keyup", function(e){
+        if(e.keyCode === 13) {
+            socket.emit("userMsg", node.value);
+            node.value = "";
+        }
+    });
+
+    // Listen to broadcast server when someone send the msg and display msg in the chat
+    socket.on("broadcastMsg", function(data){
+       if(Array.isArray(data)) {
+            displayUser("log", data);
+        } else {
+            displayMsg("log", data);
+        }
+    });
+
+    // Listen to broadcast server when someone join the chat and display the user name on left panel
+    socket.on("broadcastMsgToLeft", function(data){
+        displayUser("chat-left", data);
+    });
+
+</script>
+</body>
+</html>
