@@ -9,7 +9,7 @@ class App extends Component {
     super(props);
     var self = this;
     this.state = {
-      inputValue: "neel",
+      inputValue: "",
       name: "",
       msgList: [],
       userList: []
