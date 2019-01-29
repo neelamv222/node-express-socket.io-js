@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import openSocket from "socket.io-client";
 import './App.css';
+import {times} from "lodash";
 
 const socket = openSocket("http://localhost:8080");
 
@@ -12,7 +13,8 @@ class App extends Component {
       inputValue: "",
       name: "",
       msgList: [],
-      userList: []
+      userList: [],
+      showEmojiWrapper: false
     }
     const name = prompt("Please enter your name: ");
 
@@ -57,10 +59,44 @@ class App extends Component {
 
   displayMsg = () => {
     const {msgList} = this.state;
-    return Array.isArray(msgList) ? msgList.map(msg => <p>{msg}</p>) : <p>{msgList}</p>;
+    const displayArr = msgList.map(msg => {
+    const subStr = msg.slice(
+        msg.indexOf("[") + 1, 
+        msg.indexOf("]")
+    );
+    const remainingStr = msg.slice(
+      msg.indexOf("]") + 1, msg.length
+    );
+      // Till now it will display emoji only when we select emoji first and then some other text
+      // or in case when we slect only emoji and write no text.
+      //TODO: Need to make emoji work with text wrapping it from both sides and also if more than one emoji is selected.
+      if (msg.includes(".gif")) {
+      return (<span><img src={`emoji/${subStr}`} alt="emoji"/><p>{remainingStr}</p></span>);
+      }
+      return <p>{msg}</p>;
+    });
+    return Array.isArray(msgList) ? displayArr : <p>{msgList}</p>;
+  }
+
+  sendEmoji = (id) => () => {
+    this.setState({inputValue: `${this.state.inputValue} [${id}.gif]`});
+    document.getElementById("input").focus();
+    this.setState({showEmojiWrapper: false});
+  }
+
+  onEmojiClick = () => {
+    this.setState({showEmojiWrapper: !this.state.showEmojiWrapper});    
+  }
+
+  displayAllEmojis  = () => {
+    const emojis = times(68, String);
+   return emojis.map(emoji => {
+      return <img src={`emoji/${emoji}.gif`} alt="emoji" id={`emoji${emoji}`} onClick={this.sendEmoji(emoji)}/>
+    });
   }
 
   render() {
+    const {inputValue, showEmojiWrapper} = this.state;
     return (
       <div className="container">
         <h1> Welcome to Chat App</h1>
@@ -73,9 +109,17 @@ class App extends Component {
                     <div id="log" className="chat-top">
                     {this.displayMsg()}
                     </div>
-                    <input id="input" value={this.state.inputValue} onKeyPress={this.onKeyPress}
+                    <input id="input" value={inputValue} onKeyPress={this.onKeyPress}
                       placeholder="Type..." className="search" onChange={this.onChange} />
                     <button onClick={this.sendMsg}>Send</button>
+                    <button onClick={this.onEmojiClick}>Emoji</button>
+                    {
+                      showEmojiWrapper && (
+                        <div className="emojiWrapper">
+                        {this.displayAllEmojis()}
+                        </div>
+                      )
+                    }
                 </div>
             </div>
         </div> 
