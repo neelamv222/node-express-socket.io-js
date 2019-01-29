@@ -1,0 +1,32 @@
+.chat-container {
+  width: 100%;
+  border: 1px solid;
+  height: 430px;
+}
+
+.chat-left {
+  float: left;
+  border: 1px solid;
+  height: 100%;
+}
+
+.chat-right {
+  float: left;
+  width: 66%;
+  border: 1px solid;
+  height: 98%;
+  margin: 5px 0 0 4px;
+}
+
+.chat-top {
+  height: 360px;
+  border: 1px solid green;
+  margin: 5px;
+  overflow: auto;
+}
+
+#input {
+  width: 91%;
+  height: 40px;
+  margin-left: 5px;
+}
