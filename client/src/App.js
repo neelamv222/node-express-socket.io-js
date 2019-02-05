@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import openSocket from "socket.io-client";
+import ReactHtmlParser from "react-html-parser";
 import './App.css';
 import {times} from "lodash";
 
@@ -8,7 +9,6 @@ const socket = openSocket("http://localhost:8080");
 class App extends Component {
   constructor(props) {
     super(props);
-    var self = this;
     this.state = {
       inputValue: "",
       name: "",
@@ -16,20 +16,25 @@ class App extends Component {
       userList: [],
       showEmojiWrapper: false
     }
+  }
+
+  
+  componentDidMount(){
     const name = prompt("Please enter your name: ");
 
     // Listen to broadcast server when someone send the msg and display msg in the chat
     socket.on("broadcastMsg", (data) => {
-      self.setState({msgList: self.state.msgList.concat(data)});
+      this.setState({msgList: this.state.msgList.concat(data)});
     });
 
     // Listen to broadcast server when someone join the chat and display the user name on left panel
     socket.on("broadcastMsgToLeft", (data) => {
-      self.setState({userList: data});
+      this.setState({userList: data});
     });
 
-    self.setState({name});
+    this.setState({name});
     socket.emit("saveUserName", name || "Guest");
+    document.getElementById("input").focus();
   }
 
   onChange = (e) => {
@@ -48,7 +53,7 @@ class App extends Component {
   // On send button click below code will send the msg to server
   sendMsg = () => {
     const {inputValue} = this.state;
-    socket.emit("userMsg", inputValue);
+    inputValue && socket.emit("userMsg", inputValue);
     this.setState({inputValue: ""});
   };
 
@@ -57,26 +62,31 @@ class App extends Component {
     return userList.map(user => <p>{user}</p>);
   }
 
+  replaceAt = (index, replacement, msg, g) => {
+    return msg.substr(0, index) + replacement + msg.substr(index + g.length);
+  };
+
   displayMsg = () => {
-    const {msgList} = this.state;
-    const displayArr = msgList.map(msg => {
-    const subStr = msg.slice(
-        msg.indexOf("[") + 1, 
-        msg.indexOf("]")
-    );
-    const remainingStr = msg.slice(
-      msg.indexOf("]") + 1, msg.length
-    );
-      // Till now it will display emoji only when we select emoji first and then some other text
-      // or in case when we slect only emoji and write no text.
-      //TODO: Need to make emoji work with text wrapping it from both sides and also if more than one emoji is selected.
-      if (msg.includes(".gif")) {
-      return (<span><img src={`emoji/${subStr}`} alt="emoji"/><p>{remainingStr}</p></span>);
-      }
-      return <p>{msg}</p>;
-    });
-    return Array.isArray(msgList) ? displayArr : <p>{msgList}</p>;
+    return this.displayArr();
   }
+
+  displayArr = () =>  {
+    const {msgList} = this.state;
+    return msgList.map(msg => {
+      const matchSubStr = msg.data.match(/\[(\d){1,2}.gif]/g) || [];
+      let finalStr = msg.data;
+      matchSubStr.forEach(g => {
+        var imgIndex = finalStr.indexOf(g);
+        var src = `emoji/${g.slice(g.indexOf("[") + 1, g.indexOf("]"))}`;
+        const getReplacedVal = this.replaceAt(imgIndex, `<img src=${src} alt="emoji" />`, finalStr, g);
+        finalStr = getReplacedVal;
+      });
+      if (msg && msg.data.indexOf(".gif") >= 0) {
+        return (<span><p>{msg.name} : {ReactHtmlParser(finalStr)}</p></span>);
+        }
+        return <p  className={msg.data}>{msg.name} : {msg.data}</p>;
+      });
+  }; 
 
   sendEmoji = (id) => () => {
     this.setState({inputValue: `${this.state.inputValue} [${id}.gif]`});
@@ -102,17 +112,17 @@ class App extends Component {
         <h1> Welcome to Chat App</h1>
         <div className="row">
             <div className="col-16 chat-container">
-                <div id="chat-left" className="col-4 chat-left">
+                <div id="chat-left" className="col-3 chat-left">
                   {this.displayUser()}
                 </div>
-                <div className="col-12 chat-right">
+                <div className="col-13 chat-right">
                     <div id="log" className="chat-top">
                     {this.displayMsg()}
                     </div>
                     <input id="input" value={inputValue} onKeyPress={this.onKeyPress}
                       placeholder="Type..." className="search" onChange={this.onChange} />
-                    <button onClick={this.sendMsg}>Send</button>
-                    <button onClick={this.onEmojiClick}>Emoji</button>
+                    <button className="btn btn-primary" onClick={this.sendMsg}>Send</button>
+                    <button className="btn btn-secondary"onClick={this.onEmojiClick}>Emoji</button>
                     {
                       showEmojiWrapper && (
                         <div className="emojiWrapper">

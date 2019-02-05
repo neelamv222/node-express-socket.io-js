@@ -2,6 +2,7 @@ var express = require("express");
 var app = express();
 var server = require("http").Server(app);
 var io = require("socket.io")(server);
+var lodash = require("lodash");
 
 app.use(express.static("public"));
 var port = 8080;
@@ -18,20 +19,27 @@ app.get("/", function(req, res){
 io.on("connection", function(client){
     console.log("client connected");
 
-    var nickName = "";
     client.on("saveUserName", function(name) {
         client.nickName = name;
         userNameList.push(client.nickName);
-        client.emit("broadcastMsg", messageCollection);
+        //If onload there is only one user the clear the msgs
+        var msgCollection = userNameList.length <= 1 ? [] : messageCollection;
+        client.emit("broadcastMsg", msgCollection.concat({name: client.nickName, data: "joined", recent: true}));
+        client.broadcast.emit("broadcastMsg", msgCollection.concat({name: client.nickName, data: "joined", recent: true}));
         client.broadcast.emit("broadcastMsgToLeft", userNameList);
         client.emit("broadcastMsgToLeft", userNameList); 
     });
 
     client.on("userMsg", function(data) {
         console.log("data in server", data);
-        var sendFinalData = client.nickName + ": " + data;
+        var sendFinalData = {name: client.nickName, data};
         client.broadcast.emit("broadcastMsg", sendFinalData);
         client.emit("broadcastMsg", sendFinalData);
         messageCollection.push(sendFinalData);
+    });
+    client.on("disconnect", function() {
+        userNameList = lodash.filter(userNameList, (user) => (user !== client.nickName));
+        client.broadcast.emit("broadcastMsg", {name: client.nickName, data: "left", recent: true});
+        client.broadcast.emit("broadcastMsgToLeft", userNameList);
     });
 });

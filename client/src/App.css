@@ -6,27 +6,26 @@
 
 .chat-left {
   float: left;
-  border: 1px solid;
   height: 100%;
+  background-color: lightgrey;
 }
 
 .chat-right {
   float: left;
-  width: 66%;
-  border: 1px solid;
+  width: 74%;
   height: 98%;
   margin: 5px 0 0 4px;
+  padding-left: 0;
 }
 
 .chat-top {
   height: 360px;
-  border: 1px solid green;
   margin: 5px;
   overflow: auto;
 }
 
 #input {
-  width: 91%;
+  width: 78%;
   height: 40px;
   margin-left: 5px;
 }
@@ -46,4 +45,15 @@
   width: 7%;
   float: left;
   height: 3em;
+}
+
+.joined {
+  color: green;
+}
+
+.left {
+  color: red;
+}
+.btn {
+  margin: 0 5px 5px 8px
 }
